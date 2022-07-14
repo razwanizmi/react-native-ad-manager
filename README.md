@@ -14,19 +14,11 @@ You can use npm or Yarn to install the latest beta version:
 
 **npm:**
 
-    npm i --save react-native-ad-manager
+    npm i --save @ascendeum_ads/react-native-gam-aps
 
 **Yarn:**
 
-    yarn add react-native-ad-manager
-
-### Mostly automatic installation
-
-`$ react-native link react-native-ad-manager`
-
-Alternatively for iOS you can install the library with CocoaPods by adding a line to your `Podfile`;
-
-    pod 'react-native-ad-manager', path: '../node_modules/react-native-ad-manager'
+    yarn add @ascendeum_ads/react-native-gam-aps
 
 ### iOS
 
