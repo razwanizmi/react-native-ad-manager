@@ -1,6 +1,6 @@
-# react-native-ad-manager
+# @ascendeum_ads/react-native-gam-aps
 
-A react-native module for Google Ad Manager Banners, Interstitials and Native ads.
+A react-native module for Google Ad Manager With APS Banners, Interstitials and Native ads.
 
 The banner types are implemented as components while the interstitial and rewarded video have an imperative API.
 

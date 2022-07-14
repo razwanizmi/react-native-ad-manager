@@ -1,7 +1,7 @@
 {
   "name": "@ascendeum_ads/react-native-gam-aps",
   "title": "React Native Gam Aps",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A react-native component for Google Ad Manager with APS banners, interstitials and native ads.",
   "main": "index.js",
   "scripts": {
@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NZME/react-native-ad-manager.git",
-    "baseUrl": "https://github.com/NZME/react-native-ad-manager"
+    "url": "git+https://github.com/Prebid-bydata/react-native-ad-manager.git",
+    "baseUrl": "https://github.com/Prebid-bydata/react-native-ad-manager"
   },
   "keywords": [
     "react-native"
   ],
   "author": {
-    "name": "",
+    "name": "ascendeum",
     "email": "jitendra@ascendeum.com"
   },
   "license": "MIT",
