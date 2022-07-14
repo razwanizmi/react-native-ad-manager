@@ -52,6 +52,8 @@ import {
 <Banner
   adSize="fullBanner"
   adUnitID="your-ad-unit-id"
+  apsSlotId = "your-ad-aps-slot-uuid"
+  adsRefresh= "pass 1/0 for ads refresh or not"
   testDevices={[PublisherBanner.simulatorId]}
   onAdFailedToLoad={error => console.error(error)}
   onAppEvent={event => console.log(event.name, event.info)}

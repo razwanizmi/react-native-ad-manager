@@ -1,8 +1,8 @@
 {
-  "name": "react-native-ad-manager",
-  "title": "React Native Ad Manager",
-  "version": "1.3.9",
-  "description": "A react-native component for Google Ad Manager banners, interstitials and native ads.",
+  "name": "@ascendeum_ads/react-native-gam-aps",
+  "title": "React Native Gam Aps",
+  "version": "1.0.0",
+  "description": "A react-native component for Google Ad Manager with APS banners, interstitials and native ads.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -18,8 +18,8 @@
     "react-native"
   ],
   "author": {
-    "name": "Matej Drobnic",
-    "email": "matej.dr@gmail.com"
+    "name": "",
+    "email": "jitendra@ascendeum.com"
   },
   "license": "MIT",
   "licenseFilename": "LICENSE",

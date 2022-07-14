@@ -1,6 +1,7 @@
 #import "RNAdManagerBannerView.h"
 
 #import <GoogleMobileAds/GoogleMobileAds.h>
+#import <DTBiOSSDK/DTBiOSSDK.h>
 #import <React/RCTUtils.h>
 
 #import <React/RCTLog.h>
@@ -18,17 +19,26 @@
 
 - (void)dealloc
 {
-
+    _number = 0;
     _bannerView.delegate = nil;
     _bannerView.adSizeDelegate = nil;
     _bannerView.appEventDelegate = nil;
     _bannerView.rootViewController = nil;
 }
 
+-(void)setApsSlotId:(NSString *)apsSlotId {
+    _apsSlotId = apsSlotId;
+}
+
 - (void)setAdUnitID:(NSString *)adUnitID
 {
   _adUnitID = adUnitID;
 //  [self createViewIfCan];
+}
+
+- (void)setAdsRefresh:(NSString *)adsRefresh
+{
+  _adsRefresh = adsRefresh;
 }
 
 - (void)setAdSize:(NSString *)adSize
@@ -65,8 +75,7 @@
 }
 
 // Initialise BannerAdView as soon as all the props are set
-- (void)createViewIfCan
-{
+- (void)createViewIfCan {
     if (!_adUnitID || !_adSize/* || !_validAdSizes || !_targeting*/) {
         return;
     }
@@ -78,12 +87,10 @@
     GADAdSize adSize = [RCTConvert GADAdSize:_adSize];
     GAMBannerView *bannerView;
     if (!GADAdSizeEqualToSize(adSize, kGADAdSizeInvalid)) {
-//        self.bannerView.adSize = adSize;
         bannerView = [[GAMBannerView alloc] initWithAdSize:adSize];
     } else {
         bannerView = [[GAMBannerView alloc] initWithAdSize:kGADAdSizeBanner];
     }
-
     bannerView.delegate = self;
     bannerView.adSizeDelegate = self;
     bannerView.appEventDelegate = self;
@@ -91,60 +98,96 @@
     bannerView.translatesAutoresizingMaskIntoConstraints = YES;
 
     GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers = _testDevices;
-    GAMRequest *request = [GAMRequest request];
+        
+    bannerView.adUnitID = _adUnitID;
+    bannerView.validAdSizes = _validAdSizes;
+    [self addSubview:bannerView];
+    _bannerView = bannerView;
+    if (!_apsSlotId ) {
+        GAMRequest *request = [GAMRequest request];
+        [_bannerView loadRequest:request];
+        return;
+    }
+    [self makeAdNetworkRequest:adSize];
+}
 
+- (void)loadBanner {
+    [self createViewIfCan];
+}
+
+- (void)makeAdNetworkRequest: (GADAdSize) adSize {
+    
+    
+    DTBAdSize *size = [[DTBAdSize alloc] initBannerAdSizeWithWidth:adSize.size.width height:adSize.size.height andSlotUUID:_apsSlotId];
+    DTBAdLoader *adLoader = [DTBAdLoader new];
+    [adLoader setSizes:size, nil];
+    if([_adsRefresh isEqualToString:@"1"]){
+        [adLoader setAutoRefresh:30];
+    }
+    [adLoader loadAd:self];
+}
+
+- (void)makeRequestWithNetworkResponses: (DTBAdResponse *)adResponse {
+    GAMRequest *request = [GAMRequest request];
     GADExtras *extras = [[GADExtras alloc] init];
     if (_correlator == nil) {
         _correlator = getCorrelator(_adUnitID);
     }
     extras.additionalParameters = [[NSDictionary alloc] initWithObjectsAndKeys:
-                                   _correlator, @"correlator",
-                                   nil];
+                                    _correlator, @"correlator",
+                                    nil];
     [request registerAdNetworkExtras:extras];
-
-    if (_targeting != nil) {
-        NSDictionary *customTargeting = [_targeting objectForKey:@"customTargeting"];
-        if (customTargeting != nil) {
-            request.customTargeting = customTargeting;
-        }
-        NSArray *categoryExclusions = [_targeting objectForKey:@"categoryExclusions"];
-        if (categoryExclusions != nil) {
-            request.categoryExclusions = categoryExclusions;
-        }
-        NSArray *keywords = [_targeting objectForKey:@"keywords"];
-        if (keywords != nil) {
-            request.keywords = keywords;
-        }
-        NSString *contentURL = [_targeting objectForKey:@"contentURL"];
-        if (contentURL != nil) {
-            request.contentURL = contentURL;
-        }
-        NSString *publisherProvidedID = [_targeting objectForKey:@"publisherProvidedID"];
-        if (publisherProvidedID != nil) {
-            request.publisherProvidedID = publisherProvidedID;
-        }
-        NSDictionary *location = [_targeting objectForKey:@"location"];
-        if (location != nil) {
-            CGFloat latitude = [[location objectForKey:@"latitude"] doubleValue];
-            CGFloat longitude = [[location objectForKey:@"longitude"] doubleValue];
-            CGFloat accuracy = [[location objectForKey:@"accuracy"] doubleValue];
-            [request setLocationWithLatitude:latitude longitude:longitude accuracy:accuracy];
-        }
+    
+    NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
+    if(adResponse){
+        [dict addEntriesFromDictionary:adResponse.customTargeting];
     }
-
-    bannerView.adUnitID = _adUnitID;
-
-    bannerView.validAdSizes = _validAdSizes;
-
-    [bannerView loadRequest:request];
-
-    [self addSubview:bannerView];
-
-    _bannerView = bannerView;
+    if (_targeting != nil) {
+         NSDictionary *customTargeting = [_targeting objectForKey:@"customTargeting"];
+         if (customTargeting != nil) {
+             [dict addEntriesFromDictionary:customTargeting];
+         }
+         NSArray *categoryExclusions = [_targeting objectForKey:@"categoryExclusions"];
+         if (categoryExclusions != nil) {
+             request.categoryExclusions = categoryExclusions;
+         }
+         NSArray *keywords = [_targeting objectForKey:@"keywords"];
+         if (keywords != nil) {
+             request.keywords = keywords;
+         }
+         NSString *contentURL = [_targeting objectForKey:@"contentURL"];
+         if (contentURL != nil) {
+             request.contentURL = contentURL;
+         }
+         NSString *publisherProvidedID = [_targeting objectForKey:@"publisherProvidedID"];
+         if (publisherProvidedID != nil) {
+             request.publisherProvidedID = publisherProvidedID;
+         }
+         NSDictionary *location = [_targeting objectForKey:@"location"];
+         if (location != nil) {
+             CGFloat latitude = [[location objectForKey:@"latitude"] doubleValue];
+             CGFloat longitude = [[location objectForKey:@"longitude"] doubleValue];
+             CGFloat accuracy = [[location objectForKey:@"accuracy"] doubleValue];
+             [request setLocationWithLatitude:latitude longitude:longitude accuracy:accuracy];
+         }
+    }
+    NSString* refString = [NSString stringWithFormat:@"%i", _number];
+    NSDictionary *refDict = @{@"refreshIteration":refString};
+    [dict addEntriesFromDictionary:refDict];
+    
+    request.customTargeting = dict;
+    [_bannerView loadRequest:request];
 }
 
-- (void)loadBanner {
-    [self createViewIfCan];
+#pragma mark - <DTBAdCallback>
+- (void)onFailure: (DTBAdError)error {
+    NSLog(@"Failed to load APS bid. ERROR: %u", error);
+    [self makeRequestWithNetworkResponses:nil];
+}
+
+- (void)onSuccess: (DTBAdResponse *)adResponse {
+    NSLog(@"Successfully loaded APS bid");
+    [self makeRequestWithNetworkResponses:adResponse];
 }
 
 # pragma mark GADBannerViewDelegate
@@ -165,6 +208,7 @@
                           @"height": @(bannerView.frame.size.height)},
         });
     }
+    _number = _number+1;
 }
 
 /// Tells the delegate an ad request failed.

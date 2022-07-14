@@ -31,6 +31,13 @@ class Banner extends Component {
     this.handleOnAdLoaded = ({ nativeEvent }) => {
       this.props.onAdLoaded &&
       this.props.onAdLoaded(nativeEvent);
+      console.log(nativeEvent)
+      // if(this.props.adsRefresh === "1"){
+      //    setTimeout(() => {
+      //     console.log("refresh for every 30 second.",this.props);
+      //     this.loadBanner();
+      //   }, 30000)
+      // }
     };
   }
 
@@ -179,6 +186,15 @@ Banner.propTypes = {
     correlator: string,
   }),
 
+  /**
+   * Adrefresh
+   */
+   adsRefresh:string,
+   
+  /**
+   * APS library events
+  */
+  apsSlotId:string,
 };
 
 const CTKBannerView = requireNativeComponent(

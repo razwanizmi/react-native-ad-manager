@@ -4,9 +4,21 @@ import android.app.Activity;
 import android.content.Context;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
-
+import com.amazon.device.ads.AdError;
+import com.amazon.device.ads.AdRegistration;
+import com.amazon.device.ads.DTBAdCallback;
+import com.amazon.device.ads.DTBAdNetwork;
+import com.amazon.device.ads.DTBAdNetworkInfo;
+import com.amazon.device.ads.DTBAdRequest;
+import com.amazon.device.ads.DTBAdResponse;
+import com.amazon.device.ads.DTBAdSize;
+import com.amazon.device.ads.DTBAdUtil;
+import com.amazon.device.ads.MRAIDPolicy;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -29,6 +41,8 @@ import com.matejdr.admanager.utils.Targeting;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 class BannerAdView extends ReactViewGroup implements AppEventListener, LifecycleEventListener {
 
@@ -37,7 +51,9 @@ class BannerAdView extends ReactViewGroup implements AppEventListener, Lifecycle
     String[] testDevices;
     AdSize[] validAdSizes;
     String adUnitID;
+    String apsSlotId;
     AdSize adSize;
+    String adsRefresh;
 
     // Targeting
     Boolean hasTargeting = false;
@@ -58,12 +74,13 @@ class BannerAdView extends ReactViewGroup implements AppEventListener, Lifecycle
 
     private void createAdView() {
         if (this.adView != null) this.adView.destroy();
-
+        Log.d("ASC-XX", "createAdView:");
         this.adView = new AdManagerAdView(currentActivityContext);
         this.adView.setAppEventListener(this);
         this.adView.setAdListener(new AdListener() {
             @Override
             public void onAdLoaded() {
+                Log.d("ASC-XX", "onAdLoaded: ");
                 int width = adView.getAdSize().getWidthInPixels(getContext());
                 int height = adView.getAdSize().getHeightInPixels(getContext());
                 int left = adView.getLeft();
@@ -100,6 +117,7 @@ class BannerAdView extends ReactViewGroup implements AppEventListener, Lifecycle
                         errorMessage = "The ad request was successful, but no ad was returned due to lack of ad inventory.";
                         break;
                 }
+                Log.d("ASC-XX", "onAdFailedToLoad: "+errorMessage);
                 WritableMap event = Arguments.createMap();
                 WritableMap error = Arguments.createMap();
                 error.putString("message", errorMessage);
@@ -116,7 +134,6 @@ class BannerAdView extends ReactViewGroup implements AppEventListener, Lifecycle
             public void onAdClosed() {
                 sendEvent(RNAdManagerBannerViewManager.EVENT_AD_CLOSED, null);
             }
-
         });
         this.addView(this.adView);
     }
@@ -141,9 +158,11 @@ class BannerAdView extends ReactViewGroup implements AppEventListener, Lifecycle
                 getId(),
                 name,
                 event);
+        Log.d("ASC-XX", "sendEvent: "+name);
     }
 
     public void loadBanner() {
+        Log.d("ASC-XX", "loadBanner: ");
         ArrayList<AdSize> adSizes = new ArrayList<AdSize>();
         if (this.adSize != null) {
             adSizes.add(this.adSize);
@@ -155,16 +174,43 @@ class BannerAdView extends ReactViewGroup implements AppEventListener, Lifecycle
                 }
             }
         }
-
         if (adSizes.size() == 0) {
             adSizes.add(AdSize.BANNER);
         }
-
         AdSize[] adSizesArray = adSizes.toArray(new AdSize[adSizes.size()]);
         this.adView.setAdSizes(adSizesArray);
+        makeInternalAdsRequest(adSizesArray);
+    }
 
-        AdManagerAdRequest.Builder adRequestBuilder = new AdManagerAdRequest.Builder();
+    private void makeInternalAdsRequest(AdSize[] adSizesArray){
+        Log.d("ASC-XX", "makeInternalAdsRequest: "+adSizesArray);
+        final DTBAdRequest loader = new DTBAdRequest();
+        loader.setSizes(new DTBAdSize(adSizesArray[0].getWidth(), adSizesArray[0].getHeight(), this.apsSlotId));
+        if(this.adsRefresh.equals("1")){
+            loader.setAutoRefresh(30);
+        }
+        loader.loadAd(new DTBAdCallback() {
+            @Override
+            public void onFailure(AdError adError) {
+                Log.d("ASC-XX", "APS:Oops banner ad load has failed: " + adError.getMessage());
+                requestBannerAds(null,adSizesArray);
+            }
+            @Override
+            public void onSuccess(DTBAdResponse dtbAdResponse) {
+                Log.d("ASC-XX", "APS:dtbAdResponse: " + dtbAdResponse);
+                requestBannerAds(dtbAdResponse,adSizesArray);
+            }
+        });
+    }
 
+    private void requestBannerAds(DTBAdResponse dtbAdResponse,AdSize[] adSizesArray){
+        Log.d("ASC-XX", "requestBannerAds after auctions : "+adSizesArray);
+        AdManagerAdRequest.Builder adRequestBuilder =  null;
+        if(dtbAdResponse != null){
+            adRequestBuilder = DTBAdUtil.INSTANCE.createAdManagerAdRequestBuilder(dtbAdResponse);
+        }else {
+            adRequestBuilder = new AdManagerAdRequest.Builder();
+        }
         List<String> testDevicesList = new ArrayList<>();
         if (testDevices != null) {
             for (int i = 0; i < testDevices.length; i++) {
@@ -188,7 +234,6 @@ class BannerAdView extends ReactViewGroup implements AppEventListener, Lifecycle
         bundle.putString("correlator", correlator);
 
         adRequestBuilder.addNetworkExtrasBundle(AdMobAdapter.class, bundle);
-
 
         // Targeting
         if (hasTargeting) {
@@ -230,9 +275,7 @@ class BannerAdView extends ReactViewGroup implements AppEventListener, Lifecycle
                 adRequestBuilder.setLocation(location);
             }
         }
-
-        AdManagerAdRequest adRequest = adRequestBuilder.build();
-        this.adView.loadAd(adRequest);
+        this.adView.loadAd(adRequestBuilder.build());
     }
 
     public void setAdUnitID(String adUnitID) {
@@ -243,6 +286,14 @@ class BannerAdView extends ReactViewGroup implements AppEventListener, Lifecycle
         }
         this.adUnitID = adUnitID;
         this.adView.setAdUnitId(adUnitID);
+    }
+
+    public void setAdsRefresh(String adsRefresh){
+        this.adsRefresh = adsRefresh;
+    }
+
+    public void setApsSlotId(String apsSlotId){
+        this.apsSlotId = apsSlotId;
     }
 
     public void setTestDevices(String[] testDevices) {
