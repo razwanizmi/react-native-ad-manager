@@ -22,13 +22,15 @@ You can use npm or Yarn to install the latest beta version:
 
 ### iOS
 
-For iOS you will have to add the [Google Mobile Ads SDK](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/quick-start#import_the_mobile_ads_sdk) to your Xcode project.
+For iOS you will have to add the [Google Mobile Ads SDK](https://developers.google.com/ad-manager/mobile-ads-sdk/ios/quick-start#import_the_mobile_ads_sdk) and amazon publisher services setup to your Xcode project.
+
 
 ### Android
 
 On Android the Ad Manager library code is part of Play Services, which is automatically added when this library is linked.
 
 But you still have to manually update your `AndroidManifest.xml`, as described in the [Google Mobile Ads SDK documentation](https://developers.google.com/ad-manager/mobile-ads-sdk/android/quick-start#import_the_mobile_ads_sdk).
+and described in  amazon publisher services setup for android.
 
 ## Usage
 
@@ -38,7 +40,7 @@ import {
   Interstitial,
   PublisherBanner,
   NativeAdsManager,
-} from 'react-native-ad-manager'
+} from '@ascendeum_ads/react-native-gam-aps'
 
 // Display a DFP Publisher banner
 <Banner
