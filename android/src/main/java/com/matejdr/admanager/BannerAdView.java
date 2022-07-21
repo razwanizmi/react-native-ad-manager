@@ -54,6 +54,7 @@ class BannerAdView extends ReactViewGroup implements AppEventListener, Lifecycle
     String apsSlotId;
     AdSize adSize;
     String adsRefresh;
+    int adsCount = 0;
 
     // Targeting
     Boolean hasTargeting = false;
@@ -96,7 +97,7 @@ class BannerAdView extends ReactViewGroup implements AppEventListener, Lifecycle
                 gadSize.putDouble("height", adView.getAdSize().getHeight());
 
                 ad.putMap("gadSize", gadSize);
-
+                adsCount = adsCount+1;
                 sendEvent(RNAdManagerBannerViewManager.EVENT_AD_LOADED, ad);
             }
 
@@ -238,6 +239,7 @@ class BannerAdView extends ReactViewGroup implements AppEventListener, Lifecycle
         // Targeting
         if (hasTargeting) {
             if (customTargeting != null && customTargeting.length > 0) {
+                adRequestBuilder.addCustomTargeting("refreshIteration",String.valueOf(adsCount));
                 for (int i = 0; i < customTargeting.length; i++) {
                     String key = customTargeting[i].key;
                     if (!key.isEmpty()) {
